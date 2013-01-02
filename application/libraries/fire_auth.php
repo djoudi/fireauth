@@ -15,10 +15,17 @@ class Fire_Auth {
     * @access private
     */
     private $user_table;
+    private $groups_table;
+    // User Table Fields.
     private $identifier_field;
     private $display_name_field;
     private $username_field;
     private $password_field;
+    // Group Table Fields.
+    private $group_id_field;
+    private $group_name_field;
+    private $group_description_field;
+    private $default_group;
     
     public function __construct()
     {
@@ -34,10 +41,17 @@ class Fire_Auth {
         
         // Set config items.
         $this->user_table = $auth_config['user_table'];
+        $this->groups_table = $auth_config['groups_table'];
+        // User Table Fields.
         $this->identifier_field = $auth_config['identifier_field'];
         $this->display_name_field = $auth_config['display_name_field'];
         $this->username_field = $auth_config['username_field'];
         $this->password_field = $auth_config['password_field'];
+        // Group Table Fields.
+        $this->group_id_field = $auth_config['group_id_field'];
+        $this->group_name_field = $auth_config['group_name_field'];
+        $this->group_description_field = $auth_config['group_description_field'];
+        $this->default_group = $auth_config['default_group'];
         
         // Load database.
         $this->ci->load->database();
@@ -66,6 +80,7 @@ class Fire_Auth {
             // The passwords matched, lets create the session data.
             $this->ci->session->set_userdata(array(
                 'identifier' => $user['identifier'],
+                'group_id' => $user['group_id'],
                 'username' => $user['username'],
                 'logged_in' => $_SERVER['REQUEST_TIME']
             ));
@@ -81,13 +96,14 @@ class Fire_Auth {
     {
         // Remove userdata.
         $this->ci->session->unset_userdata('identifier');
+        $this->ci->session->unset_userdata('group_id');
         $this->ci->session->unset_userdata('username');
         $this->ci->session->unset_userdata('logged_in');
         
         return true;   
     }
     
-    public function register($username, $password, $display_name)
+    public function register($username, $password, $display_name, $group_id = false)
     {
         // Check the username.
         if($this->check_username($username) == true)
@@ -99,11 +115,20 @@ class Fire_Auth {
         // Hash password.
         $password = $this->generate_hash($password);
         
+        // Check if a group has been set.
+        if(!$group_id)
+        {
+            $group_id = $this->default_group;
+        } else {
+            $group_id = $group_id;
+        }
+        
         // Data to insert.
         $data = array(
             $this->display_name_field => $display_name,
             $this->username_field => $username,
             $this->password_field => $password,
+            $this->group_id_field => $group_id,
         );
         
         // Enter into the database.
